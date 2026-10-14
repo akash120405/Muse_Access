@@ -22,16 +22,6 @@ python -m http.server 8000
 
 Then visit `http://localhost:8000`.
 
-## Publish on GitHub Pages
-
-1. Create a new GitHub repository and upload or push the contents of this folder to its `main` branch.
-2. In the repository, open **Settings → Pages**.
-3. Under **Build and deployment**, select **GitHub Actions** as the source.
-4. Push a commit to `main` or run **Deploy Muse to GitHub Pages** from the Actions tab.
-5. GitHub will show the published URL under **Settings → Pages** after the deployment completes.
-
-The included workflow uploads the repository root as a static site. No build step or secret is required.
-
 ## Data and privacy
 
 The initial entries are illustrative sample data. Replace them before using Muse for a real review. Records are saved in `localStorage` on the current browser and device. Clearing browser storage removes them. CSV exports are downloaded to the user's device.
