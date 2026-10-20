@@ -1,39 +1,97 @@
-# Muse Access Review
+# Tally — a ledger for your subscriptions
 
-Muse is a lightweight, static access-review dashboard. It helps a team keep an inventory of app connections, their owners, business purpose, permissions, last-used evidence, exceptions, and next review date.
+A small web app around the Subscription Manager Agent: a Flask backend
+wraps the original LangChain agent and tools, and a browser frontend
+gives you a ledger view, a budget headroom bar, and a chat panel to
+talk to the agent directly.
 
-## Features
+## What's inside
 
-- Responsive dashboard with high-priority, review-soon, and safe-to-leave summaries
-- Searchable connection inventory with risk filters and detail drawer
-- Add and edit connection records, plus a draft change proposal with workflow impact and recovery guidance
-- CSV report export
-- Review history, owner overview, and configurable review cadence
-- Local browser storage; no backend, analytics, account connection, or credential storage
-- GitHub Pages deployment through GitHub Actions
+- `agent.py` / `tools.py` — the original agent and tools, with the API
+  key moved out of the source and into `.env`, plus a `remove_subscription`
+  tool so you can cancel things by name.
+- `app.py` — Flask backend exposing:
+  - `GET /api/subscriptions` — current ledger state
+  - `POST /api/subscriptions` — add an entry directly (used by the quick-add form)
+  - `DELETE /api/subscriptions/<name>` — remove an entry
+  - `POST /api/chat` — send a message to the agent
+  - `POST /api/reset` — clear the ledger and start a new conversation
+- `templates/index.html`, `static/style.css`, `static/script.js` — the frontend.
+- `.env` — already contains the API key you gave me.
 
-## Run locally
-
-Open `index.html` in a browser, or start a static server from this folder:
+## Run it locally
 
 ```bash
-python -m http.server 8000
+cd tally-app
+python -m venv .venv
+source .venv/bin/activate   # Windows: .venv\Scripts\activate
+pip install -r requirements.txt
+python app.py
 ```
 
-Then visit `http://localhost:8000`.
+Then open **http://localhost:5000** in your browser.
 
-## Data and privacy
+## Using it
 
-The initial entries are illustrative sample data. Replace them before using Muse for a real review. Records are saved in `localStorage` on the current browser and device. Clearing browser storage removes them. CSV exports are downloaded to the user's device.
+- Type naturally in the "Ask the clerk" panel — e.g. *"Add Netflix for
+  $15, renews on the 5th"* or *"I'm over my $50 budget, what should I
+  cancel?"* — and the agent will call its tools and reply.
+- Or skip the chat and use the quick-add row at the bottom of the ledger
+  table to add an entry instantly, without going through the model.
+- Set a monthly budget in the ledger panel to see a headroom bar (it's
+  stored in your browser only).
+- "Clear the ledger" wipes all subscriptions and starts a fresh
+  conversation with the agent.
 
-Muse does not connect to providers or verify their actual authorization settings. Confirm scope, expiry, owner, and last-used details in the provider's security or admin console. Record permission names and review metadata only. Never enter passwords, API keys, OAuth tokens, payment details, or private message contents.
+## About the API key
 
-## Risk guide
+Your NVIDIA NIM key is saved in `.env` (not committed to git — see
+`.gitignore`) and is only read on the server side; the browser never
+sees it. Since you shared it in plain text in our chat, it's worth
+rotating it in the NVIDIA console if you'd rather it not linger
+anywhere outside this file.
 
-- **High priority:** access can send, buy, delete, publish, change permissions, or expose highly sensitive data.
-- **Review soon:** access is broader than needed, dormant, or shared across unrelated workflows.
-- **Safe to leave:** access is justified for a named workflow and limited to what it needs.
+## Deploying somewhere other than your laptop
 
-## Built with
+This is a stateful Flask app (the ledger lives in memory, not a
+database), so the simplest hosts are ones that run a single
+long-lived Python process — Render, Railway, Fly.io, or a small VPS.
+Set `NVIDIA_API_KEY` as an environment variable on whichever platform
+you pick instead of shipping the `.env` file.
 
-HTML, CSS, and vanilla JavaScript. No framework or package install is required.
+
+
+
+                 TallyApp
+                     │
+                     ▼
+               Natural Language
+                     │
+                     ▼
+                    NLP
+                     │
+                     ▼
+                    LLM
+              (understands request)
+                     │
+                     ▼
+                 LangChain
+          (connects LLM with tools)
+                     │
+                     ▼
+                 LangGraph
+           (controls the workflow)
+                     │
+                     ▼
+               Agentic AI
+                     │
+              ┌──────┴──────┐
+              ▼             ▼
+        Add subscription   Check budget
+
+        <img width="732" height="673" alt="image" src="https://github.com/user-attachments/assets/c016906e-2285-4af0-a26c-f9d97ec2c3d8" />
+
+              │             │
+              └──────┬──────┘
+                     ▼
+                Final response
